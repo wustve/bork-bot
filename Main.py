@@ -84,7 +84,10 @@ class bday():
             if oldLine == "":
                 return
             else:
-                self.closestDateLines.remove(oldLine)
+                try:
+                    self.closestDateLines.remove(oldLine)
+                except:
+                    pass
                 if len(self.closestDateLines) == 0:
                     self.closestDate = None
         self.task.cancel()
