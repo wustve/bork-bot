@@ -1,6 +1,7 @@
 import discord
 from datetime import datetime
 import asyncio
+import os
 client = discord.Client()
 class bday():
     def __init__(self, closestDateLines = []):
@@ -238,4 +239,4 @@ async def on_reaction_update(reaction, user): #only works when message is in int
     else:
         await reaction.message.channel.send("{.name} has reacted".format(user))
 '''
-client.run("NzI1MTIxMzUxNTg0NzEwNzA3.XvUyZw.lB1beSGp4okFfW1Hp17YlcK3UP8")
+client.run(os.environ["token"])
