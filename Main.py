@@ -131,7 +131,7 @@ async def on_message(message):
         def check (reaction,user):
             return user == message.author and str(reaction.emoji) == "👍" and sent.id == reaction.message.id #bool
         try:
-            reaction, user = await client.wait_for("reaction_update", timeout = 10, check = check)
+            reaction, user = await client.wait_for("reaction_add", timeout = 10, check = check)
         except:
             await message.channel.send("No luck for {.author.name}".format(message))
             reacted.remove()
