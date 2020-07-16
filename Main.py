@@ -243,4 +243,3 @@ async def on_reaction_update(reaction, user): #only works when message is in int
         await reaction.message.channel.send("{.name} has reacted".format(user))
 '''
 client.run(os.environ["token"])
-#test
