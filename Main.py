@@ -158,6 +158,9 @@ async def on_message(message):
             output = message.content[titleStart +1:titleEnd]+ "\n>>> "
             emote = 97
             for i in options: #round about way to avoid hardcoding each emoji into the code, but I had to do it anyways for the reaction portion so no point in doing it this way here
+                if i.strip() == '':
+                    await message.channel.send("Empty options")
+                    return
                 output = output +  ":regional_indicator_" + chr(emote)+": " +i.strip() +"\n"
                 emote +=1
             sent = await message.channel.send(output)
