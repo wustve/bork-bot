@@ -2,6 +2,13 @@ import discord
 from datetime import datetime
 import asyncio
 import os
+import psycopg2
+
+
+databaseUrl = os.environ['DATABASE_URL']
+conn = psycopg2.connect(databaseUrl, sslmode = 'require')
+
+
 client = discord.Client()
 class bday():
     def __init__(self, closestDateLines = []):
