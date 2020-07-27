@@ -202,7 +202,7 @@ async def on_message(message):
                 cur.execute('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new)
             except:
                 new = (message.author.id, date, message.channel.id, None)
-                cur.execute('INSERT INTO birthdays (userId,date,channel) VALUES (%s, %s, %s)', new)
+                cur.execute('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new)
         elif existing[1] == date and existing [2] == message.channel.id:
             await message.channel.send("This is matches your existing record")
             return
