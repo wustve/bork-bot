@@ -4,19 +4,12 @@ import asyncio
 import os
 import psycopg2
 
-from  dotenv import load_dotenv
-load_dotenv()
+#from  dotenv import load_dotenv
+#load_dotenv()
 
 databaseUrl = os.environ['DATABASE_URL']
 conn = psycopg2.connect(databaseUrl, sslmode = 'require')
 cur = conn.cursor()
-
-#cur.execute("DELETE FROM birthdays")
-#cur.execute("SELECT * FROM birthdays")
-#print(cur.fetchall())
-
-#cur.execute('''ALTER TABLE birthdays ALTER COLUMN userId TYPE BIGINT, ALTER COLUMN channel TYPE BIGINT, ALTER COLUMN guild TYPE BIGINT;''')
-#conn.commit()
 
 client = discord.Client()
 class bday():
@@ -66,59 +59,11 @@ class bday():
             elif i[1] == self.closestDate:
                 self.closestDateInfo.append(i)
         
-        
-        '''
-        file = open("birthdays.txt","r")
-        bdays = file.readlines()
-        file.close()
-        file = open("birthdays.txt","w")
-        for i in bdays:
-            line = i.split(" ")
-            checkDate = datetime.strptime(line[1],"%Y-%m-%d")
-            if line in self.closestDateInfo:
-                checkDate = checkDate.replace(year = checkDate.year + 1)
-                newLine = line.copy()
-                newLine[1] = str(checkDate.date())
-                newLine = " ".join(newLine)
-                bdays.append(newLine)
-                self.closestDateInfo.pop(self.closestDateInfo.index(line))
-                continue
-            elif self.closestDate == None and checkDate > self.currentDate:
-                self.closestDate = checkDate
-                self.closestDateInfo.append(line)
-                file.write(i)
-            elif checkDate < self.currentDate:
-                #datetime.strptime(line[1],"%Y-%m-%d")
-                checkDate = checkDate.replace(year = checkDate.year + 1)
-                newLine = line.copy()
-                newLine[1] = str(checkDate.date())
-                newLine = " ".join(newLine)
-                bdays.append(newLine)
-
-                try:
-                    await client.get_channel(int(line[2].strip("\n"))).send("While I was offline, we missed " +client.get_user(int(line[0])).mention + "'s bday on " + line[1] )
-                except:
-                    await client.get_user(int(line[0].strip("\n"))).send("While I was offline, we missed " +client.get_user(int(line[0])).mention + "'s bday on " + line[1] )
-            elif checkDate < self.closestDate:
-                self.closestDate = checkDate
-                self.closestDateInfo.clear()
-                self.closestDateInfo.append(line)
-                file.write(i)
-            elif checkDate == self.closestDate:
-                self.closestDateInfo.append(line)
-                file.write(i)
-            else: 
-                file.write(i)
-        file.close()
-        '''
-        print(self.closestDateInfo)
-
         conn.commit()
         self.task = asyncio.ensure_future(self.bdayTimer())
 
     async def bdayTimer(self): 
         if self.closestDate != None:
-            print(self.closestDate)
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
 
             for i in self.closestDateInfo:
@@ -272,9 +217,6 @@ async def on_message(message):
         global birthday
         birthday.update(new, existing)
         await message.channel.send("Saved")
-
-
-
 
 '''
 @client.event
