@@ -4,12 +4,14 @@ import asyncio
 import os
 import psycopg2
 
-#from  dotenv import load_dotenv
-#load_dotenv()
+from  dotenv import load_dotenv
+load_dotenv()
 
 databaseUrl = os.environ['DATABASE_URL']
 conn = psycopg2.connect(databaseUrl, sslmode = 'require')
 cur = conn.cursor()
+cur.execute ("DELETE FROM birthdays")
+conn.commit()
 
 client = discord.Client()
 class bday():
@@ -25,9 +27,8 @@ class bday():
         allBdays = cur.fetchall()
         for i in allBdays:
             if i in self.closestDateInfo:
-                print(self.closestDateInfo)
+                self.closestDateInfo.remove(i)
                 newDate = i[1].replace(year = i[1].year + 1)
-                self.closestDateInfo.pop(self.closestDateInfo.index(i))
                 if i[3] != None:
                     cur.execute("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3]))
                 else:
@@ -44,10 +45,9 @@ class bday():
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
                     cur.execute("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3]))
-                    print(i[3])
                 else:
                     cur.execute("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2]))
-                    print('ye')
+                    
                 try:
                     await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s bday on " + str(i[1].date()) )
                 except:
@@ -65,35 +65,38 @@ class bday():
     async def bdayTimer(self): 
         if self.closestDate != None:
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
-
             for i in self.closestDateInfo:
-
                 try:
+                    
                     await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s bday!" )
                 except:
                     await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s bday!")
 
             self.__init__(self.closestDateInfo) 
             await self.check()
-    def update(self,new, existing):
-
-        if self.closestDate == None or new[1] == self.closestDate:
+    async def update(self,new, existing):
+        print(self.closestDateInfo)
+        if self.closestDate == None: 
+            self.closestDate = new[1]
+            self.closestDateInfo.append(new)
+        elif new[1] == self.closestDate:
             self.closestDateInfo.append(new)
         elif new[1] < self.closestDate:
             self.closestDate = new[1]
             self.closestDateInfo.clear()
             self.closestDateInfo.append(new)
-        if existing == None:
-            return
-        else:
-            try:
-                self.closestDateInfo.remove(existing)
-            except:
-                pass
-            if len(self.closestDateInfo) == 0:
-                self.closestDate = None
-        self.task.cancel()
-        self.task = asyncio.ensure_future(self.bdayTimer())
+        try:
+            self.closestDateInfo.remove(existing)
+        except:
+            pass
+
+        if len(self.closestDateInfo) == 0:
+            self.closestDate = None
+            self.__init__() 
+            await self.check()
+        else:     
+            self.task.cancel()
+            self.task = asyncio.ensure_future(self.bdayTimer())
 
 global birthday
 async def createBday(): #Can't call async functions from constructor, so I have to do this
@@ -195,7 +198,6 @@ async def on_message(message):
         except:
             cur.execute("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id))
         existing = cur.fetchone()
-        print(existing)
         if existing == None:
             try:
                 new = (message.author.id, date, message.channel.id, message.guild.id)
@@ -215,7 +217,7 @@ async def on_message(message):
                 cur.execute("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id))
         conn.commit()
         global birthday
-        birthday.update(new, existing)
+        await birthday.update(new, existing)
         await message.channel.send("Saved")
 
 '''
