@@ -4,14 +4,14 @@ import asyncio
 import os
 import psycopg2
 
-from  dotenv import load_dotenv
-load_dotenv()
+#from  dotenv import load_dotenv
+#load_dotenv()
 
 databaseUrl = os.environ['DATABASE_URL']
 conn = psycopg2.connect(databaseUrl, sslmode = 'require')
 cur = conn.cursor()
-cur.execute ("DELETE FROM birthdays")
-conn.commit()
+#cur.execute ("DELETE FROM birthdays")
+#conn.commit()
 
 client = discord.Client()
 class bday():
