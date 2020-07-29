@@ -2,19 +2,18 @@ import discord
 from datetime import datetime
 import asyncio
 import os
-import psycopg2
+from db import Db
 
-#from  dotenv import load_dotenv
-#load_dotenv()
+from  dotenv import load_dotenv
+load_dotenv()
 
-databaseUrl = os.environ['DATABASE_URL']
-conn = psycopg2.connect(databaseUrl, sslmode = 'require')
-cur = conn.cursor()
-#cur.execute ("DELETE FROM birthdays")
-#conn.commit()
+#database.execute ("DELETE FROM birthdays")
+#database.connection.commit()
+
+database = Db()
 
 client = discord.Client()
-class bday():
+class Bday():
     def __init__(self, closestDateInfo = []):
         self.closestDateInfo = closestDateInfo
         self.currentDate = datetime.now()
@@ -23,16 +22,15 @@ class bday():
 
     async def check(self):
         self.task.cancel()
-        cur.execute("SELECT * FROM birthdays")
-        allBdays = cur.fetchall()
+        allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         for i in allBdays:
             if i in self.closestDateInfo:
                 self.closestDateInfo.remove(i)
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
-                    cur.execute("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3]))
+                    database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                 else:
-                    cur.execute("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2]))
+                    database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
                 allBdays.append((i[0],newDate,i[2],i[3]))
             elif self.closestDate == None and i[1] > self.currentDate:
                 self.closestDate = i[1]
@@ -44,14 +42,14 @@ class bday():
                     pass
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
-                    cur.execute("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3]))
+                    database.change(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                 else:
-                    cur.execute("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2]))
+                    database.change(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
                     
                 try:
-                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s bday on " + str(i[1].date()) )
+                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
                 except:
-                    await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s bday on " + str(i[1].date()) )
+                    await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
             elif i[1] < self.closestDate:
                 self.closestDate = i[1]
                 self.closestDateInfo.clear()
@@ -59,7 +57,7 @@ class bday():
             elif i[1] == self.closestDate:
                 self.closestDateInfo.append(i)
         
-        conn.commit()
+        database.connection.commit()
         self.task = asyncio.ensure_future(self.bdayTimer())
 
     async def bdayTimer(self): 
@@ -68,9 +66,9 @@ class bday():
             for i in self.closestDateInfo:
                 try:
                     
-                    await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s bday!" )
+                    await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
                 except:
-                    await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s bday!")
+                    await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
 
             self.__init__(self.closestDateInfo) 
             await self.check()
@@ -101,7 +99,7 @@ class bday():
 global birthday
 async def createBday(): #Can't call async functions from constructor, so I have to do this
     global birthday
-    birthday = bday()
+    birthday = Bday()
     await birthday.check()              
 
 
@@ -194,29 +192,28 @@ async def on_message(message):
             await message.channel.send("Format should be: $bday mm/dd")
             return
         try: 
-            cur.execute("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id))
+            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
         except:
-            cur.execute("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id))
-        existing = cur.fetchone()
+            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
         if existing == None:
             try:
                 new = (message.author.id, date, message.channel.id, message.guild.id)
-                cur.execute('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new)
+                database.request(('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new),"change")
             except:
                 new = (message.author.id, date, message.channel.id, None)
-                cur.execute('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new)
+                database.request(('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new),"change")
         elif existing[1] == date and existing [2] == message.channel.id:
             await message.channel.send("This is matches your existing record")
             return
         else:
             try:
                 new = (message.author.id, date, message.channel.id, message.guild.id)
-                cur.execute("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, message.author.id, message.guild.id))
+                database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, message.author.id, message.guild.id)), "change")
             except:
                 new = (message.author.id, date, message.channel.id, None)
-                cur.execute("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id))
-        conn.commit()
-        global birthday
+                database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id)), "change")
+        database.connection.commit()
+        #global birthday
         await birthday.update(new, existing)
         await message.channel.send("Saved")
 
