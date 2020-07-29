@@ -184,38 +184,41 @@ async def on_message(message):
     
     elif message.content.lower().startswith("$bday"):
         try:
-            date = datetime.strptime(message.content[5:].strip(), "%m/%d")
-            date = date.replace(year=datetime.now().year)
-            if date < datetime.now():
-                date = date.replace(year=datetime.now().year + 1)
-        except:
-            await message.channel.send("Format should be: $bday mm/dd")
-            return
-        try: 
-            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
-        except:
-            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
-        if existing == None:
             try:
-                new = (message.author.id, date, message.channel.id, message.guild.id)
-                database.request(('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new),"change")
+                date = datetime.strptime(message.content[5:].strip(), "%m/%d")
+                date = date.replace(year=datetime.now().year)
+                if date < datetime.now():
+                    date = date.replace(year=datetime.now().year + 1)
             except:
-                new = (message.author.id, date, message.channel.id, None)
-                database.request(('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new),"change")
-        elif existing[1] == date and existing [2] == message.channel.id:
-            await message.channel.send("This is matches your existing record")
-            return
-        else:
-            try:
-                new = (message.author.id, date, message.channel.id, message.guild.id)
-                database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, message.author.id, message.guild.id)), "change")
+                await message.channel.send("Format should be: $bday mm/dd")
+                return
+            try: 
+                existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
             except:
-                new = (message.author.id, date, message.channel.id, None)
-                database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id)), "change")
-        database.connection.commit()
-        #global birthday
-        await birthday.update(new, existing)
-        await message.channel.send("Saved")
+                existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
+            if existing == None:
+                try:
+                    new = (message.author.id, date, message.channel.id, message.guild.id)
+                    database.request(('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new),"change")
+                except:
+                    new = (message.author.id, date, message.channel.id, None)
+                    database.request(('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new),"change")
+            elif existing[1] == date and existing [2] == message.channel.id:
+                await message.channel.send("This is matches your existing record")
+                return
+            else:
+                try:
+                    new = (message.author.id, date, message.channel.id, message.guild.id)
+                    database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, message.author.id, message.guild.id)), "change")
+                except:
+                    new = (message.author.id, date, message.channel.id, None)
+                    database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id)), "change")
+            database.connection.commit()
+            #global birthday
+            await birthday.update(new, existing)
+            await message.channel.send("Saved")
+        except ConnectionError:
+            await message.channel.send("Could not connect to database D:")
 
 '''
 @client.event
