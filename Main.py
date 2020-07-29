@@ -4,8 +4,8 @@ import asyncio
 import os
 from db import Db
 
-from  dotenv import load_dotenv
-load_dotenv()
+#from  dotenv import load_dotenv
+#load_dotenv()
 
 #database.execute ("DELETE FROM birthdays")
 #database.connection.commit()
