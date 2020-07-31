@@ -42,9 +42,9 @@ class Bday():
                     pass
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
-                    database.change(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
+                    database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                 else:
-                    database.change(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
+                    database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
                     
                 try:
                     await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
@@ -107,7 +107,7 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
-
+    print(client.guilds)
     print("ready")
 
 
