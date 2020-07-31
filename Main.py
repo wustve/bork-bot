@@ -25,6 +25,7 @@ class Bday():
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         for i in allBdays:
             if i in self.closestDateInfo:
+                print(i)
                 self.closestDateInfo.remove(i)
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
@@ -64,8 +65,11 @@ class Bday():
         if self.closestDate != None:
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
             for i in self.closestDateInfo:
+                if i[3] != None and client.get_guild(i[3]).get_user(i[0]) == None:
+                    database.request(("DELETE FROM birthdays WHERE guild = %s AND user = %s",(i[3],i[0])), "change")
+                    self.closestDateInfo.remove(i)
+                    continue
                 try:
-                    
                     await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
                 except:
                     await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
@@ -107,7 +111,9 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
-    print(client.guilds)
+    print((tuple(i.id for i in client.guilds)))
+    database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
+    database.connection.commit()
     print("ready")
 
 
