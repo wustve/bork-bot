@@ -7,10 +7,10 @@ from db import Db
 #from  dotenv import load_dotenv
 #load_dotenv()
 
-#database.execute ("DELETE FROM birthdays")
-#database.connection.commit()
 
 database = Db()
+#database.request (("DELETE FROM birthdays"), 'change')
+#database.connection.commit()
 
 client = discord.Client()
 class Bday():
@@ -25,7 +25,6 @@ class Bday():
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         for i in allBdays:
             if i in self.closestDateInfo:
-                print(i)
                 self.closestDateInfo.remove(i)
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
@@ -38,7 +37,7 @@ class Bday():
                 self.closestDateInfo.append(i)
             elif i[1] < self.currentDate:
                 try:
-                    self.closestDateInfo.pop(self.closestDateInfo.index(i))
+                    self.closestDateInfo.remove(i)
                 except:
                     pass
                 newDate = i[1].replace(year = i[1].year + 1)
@@ -51,6 +50,8 @@ class Bday():
                     await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
                 except:
                     await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
+                allBdays.append((i[0],newDate,i[2],i[3]))
+
             elif i[1] < self.closestDate:
                 self.closestDate = i[1]
                 self.closestDateInfo.clear()
@@ -64,20 +65,29 @@ class Bday():
     async def bdayTimer(self): 
         if self.closestDate != None:
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
+            toDelete = []
             for i in self.closestDateInfo:
-                if i[3] != None and client.get_guild(i[3]).get_user(i[0]) == None:
-                    database.request(("DELETE FROM birthdays WHERE guild = %s AND user = %s",(i[3],i[0])), "change")
-                    self.closestDateInfo.remove(i)
-                    continue
                 try:
-                    await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
-                except:
-                    await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
-
+                    print(i)
+                    
+                    if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
+                        database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
+                        toDelete.append(i)
+                        print ("deleted")
+                        continue
+                    
+                    try:
+                        await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
+                    except:
+                        await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
+                except Exception as e:
+                    print(e)
+            for i in toDelete:
+                self.closestDateInfo.remove(i)
+            database.connection.commit()
             self.__init__(self.closestDateInfo) 
             await self.check()
     async def update(self,new, existing):
-        print(self.closestDateInfo)
         if self.closestDate == None: 
             self.closestDate = new[1]
             self.closestDateInfo.append(new)
@@ -111,12 +121,9 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
-    print((tuple(i.id for i in client.guilds)))
     database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
     database.connection.commit()
     print("ready")
-
-
 
 @client.event # essentially:  on_message = client.event(on_message), takes the function as its parameter and creates a new method on the client itself = func
 #now, when client recieves a message, it creates a message obj and passes it into its attribute
