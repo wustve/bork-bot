@@ -25,7 +25,7 @@ class Bday():
         self.task.cancel()
         database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
         database.connection.commit()
-        self.closestDateInfo = [i for j in self.closestDateInfo if j not in [i.id for i in client.guilds]]
+        self.closestDateInfo = [j for j in self.closestDateInfo if j in [i.id for i in client.guilds] or j == None]
 
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         removedChannels = []
@@ -88,7 +88,7 @@ class Bday():
             removedChannels = []
             database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
             database.connection.commit()
-            self.closestDateInfo = [i for j in self.closestDateInfo if j not in [i.id for i in client.guilds]]
+            self.closestDateInfo = [j for j in self.closestDateInfo if j in [i.id for i in client.guilds] or j == None]
             print(self.closestDateInfo)
             for i in self.closestDateInfo[:]:
                 try:
