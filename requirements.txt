@@ -2,3 +2,4 @@ discord
 datetime
 asyncio
 psycopg2
+pytz
