@@ -23,11 +23,24 @@ class Bday():
 
     async def check(self):
         self.task.cancel()
+        database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
+        database.connection.commit()
+        self.closestDateInfo = [i for j in self.closestDateInfo if j not in [i.id for i in client.guilds]]
+
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
+        removedChannels = []
+        print(self.closestDateInfo)
         for i in allBdays:
             if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
                 database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
                 print ("deleted")
+                continue
+            elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
+                database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
+                self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
+                removedChannels.append(i[2])
+                print ("deleted")
+                print(self.closestDateInfo)
                 continue
 
             elif i in self.closestDateInfo:
@@ -70,9 +83,13 @@ class Bday():
 
     async def bdayTimer(self): 
         if self.closestDate != None:
-            print((self.closestDate - self.currentDate).total_seconds())
 
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
+            removedChannels = []
+            database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
+            database.connection.commit()
+            self.closestDateInfo = [i for j in self.closestDateInfo if j not in [i.id for i in client.guilds]]
+            print(self.closestDateInfo)
             for i in self.closestDateInfo[:]:
                 try:
                     print(i)
@@ -81,6 +98,14 @@ class Bday():
                         database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
                         self.closestDateInfo.remove(i)
                         print ("deleted")
+                        continue
+                    elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
+                        database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
+                        self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
+
+                        removedChannels.append(i[2])
+                        print ("deleted")
+                        print(self.closestDateInfo)
                         continue
                     
                     try:
@@ -126,8 +151,6 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
-    database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
-    database.connection.commit()
     print("ready")
 
 @client.event # essentially:  on_message = client.event(on_message), takes the function as its parameter and creates a new method on the client itself = func
@@ -197,8 +220,6 @@ async def on_message(message):
         toSend = message.content[4:]
         toSend = toSend.replace("u","uwu").replace("U","UWU").replace("o","owo").replace("O","OWO").replace("l","w").replace("L","W").replace("r","w").replace("R","W")
         await message.channel.send(toSend)
-    
-    
     
     elif message.content.lower().startswith("$bday"):
         try:
