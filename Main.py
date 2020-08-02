@@ -40,7 +40,6 @@ class Bday():
                 self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
                 removedChannels.append(i[2])
                 print ("deleted")
-                print(self.closestDateInfo)
                 continue
 
             elif i in self.closestDateInfo:
@@ -77,7 +76,8 @@ class Bday():
                 self.closestDateInfo.append(i)
             elif i[1] == self.closestDate:
                 self.closestDateInfo.append(i)
-        
+            print(self.closestDateInfo)
+
         database.connection.commit()
         self.task = asyncio.ensure_future(self.bdayTimer())
 
@@ -103,13 +103,14 @@ class Bday():
 
                     removedChannels.append(i[2])
                     print ("deleted")
-                    print(self.closestDateInfo)
                     continue
                 
                 try:
                     await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
                 except:
                     await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
+                print(self.closestDateInfo)
+
             database.connection.commit()
             self.__init__(self.closestDateInfo) 
             await self.check()
