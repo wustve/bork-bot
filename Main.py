@@ -25,7 +25,7 @@ class Bday():
         self.task.cancel()
         database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
         database.connection.commit()
-        self.closestDateInfo = [j for j in self.closestDateInfo if j in [i.id for i in client.guilds] or j == None]
+        self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
 
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         removedChannels = []
@@ -83,37 +83,33 @@ class Bday():
 
     async def bdayTimer(self): 
         if self.closestDate != None:
-
+            print([j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None])
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
             removedChannels = []
             database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
             database.connection.commit()
-            self.closestDateInfo = [j for j in self.closestDateInfo if j in [i.id for i in client.guilds] or j == None]
-            print(self.closestDateInfo)
+            self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
             for i in self.closestDateInfo[:]:
-                try:
-                    print(i)
-                    
-                    if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
-                        database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
-                        self.closestDateInfo.remove(i)
-                        print ("deleted")
-                        continue
-                    elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
-                        database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
-                        self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
+                print(i)
+                
+                if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
+                    database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
+                    self.closestDateInfo.remove(i)
+                    print ("deleted")
+                    continue
+                elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
+                    database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
+                    self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
 
-                        removedChannels.append(i[2])
-                        print ("deleted")
-                        print(self.closestDateInfo)
-                        continue
-                    
-                    try:
-                        await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
-                    except:
-                        await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
-                except Exception as e:
-                    print(e)
+                    removedChannels.append(i[2])
+                    print ("deleted")
+                    print(self.closestDateInfo)
+                    continue
+                
+                try:
+                    await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
+                except:
+                    await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
             database.connection.commit()
             self.__init__(self.closestDateInfo) 
             await self.check()
@@ -228,9 +224,6 @@ async def on_message(message):
                 date = date.replace(year=datetime.now(pytz.utc).year)
                 tz = pytz.timezone(message.content.split(" ")[2].strip())
                 date = tz.localize(date)
-                print(date)
-                print(datetime.now(tz))
-                print(date - datetime.now(tz))
                 if date < datetime.now(tz):
                     date = date.replace(year=datetime.now(tz).year + 1)
             except Exception as e:
@@ -264,6 +257,8 @@ async def on_message(message):
             await message.channel.send("Saved")
         except ConnectionError:
             await message.channel.send("Could not connect to database D:")
+        except Exception as e:
+            print(e)
 
 '''
 @client.event
