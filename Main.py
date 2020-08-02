@@ -1,5 +1,6 @@
 import discord
 from datetime import datetime
+import pytz
 import asyncio
 import os
 from db import Db
@@ -9,14 +10,14 @@ from db import Db
 
 
 database = Db()
-#database.request (("DELETE FROM birthdays"), 'change')
+#database.request (("ALTER TABLE birthdays ALTER COLUMN date TYPE TIMESTAMP with time zone;"), 'change')
 #database.connection.commit()
 
 client = discord.Client()
 class Bday():
     def __init__(self, closestDateInfo = []):
         self.closestDateInfo = closestDateInfo
-        self.currentDate = datetime.now()
+        self.currentDate = datetime.now(pytz.utc)
         self.closestDate = None
         self.task = asyncio.ensure_future(self.bdayTimer())
 
@@ -69,6 +70,8 @@ class Bday():
 
     async def bdayTimer(self): 
         if self.closestDate != None:
+            print((self.closestDate - self.currentDate).total_seconds())
+
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
             for i in self.closestDateInfo[:]:
                 try:
@@ -200,12 +203,18 @@ async def on_message(message):
     elif message.content.lower().startswith("$bday"):
         try:
             try:
-                date = datetime.strptime(message.content[5:].strip(), "%m/%d")
-                date = date.replace(year=datetime.now().year)
-                if date < datetime.now():
-                    date = date.replace(year=datetime.now().year + 1)
-            except:
-                await message.channel.send("Format should be: $bday mm/dd")
+                date = datetime.strptime(message.content.split(" ")[1].strip(), "%m/%d")
+                date = date.replace(year=datetime.now(pytz.utc).year)
+                tz = pytz.timezone(message.content.split(" ")[2].strip())
+                date = tz.localize(date)
+                print(date)
+                print(datetime.now(tz))
+                print(date - datetime.now(tz))
+                if date < datetime.now(tz):
+                    date = date.replace(year=datetime.now(tz).year + 1)
+            except Exception as e:
+                print(e)
+                await message.channel.send("Format should be: $bday mm/dd timezone")
                 return
             try: 
                 existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
