@@ -24,7 +24,12 @@ class Bday():
         self.task.cancel()
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         for i in allBdays:
-            if i in self.closestDateInfo:
+            if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
+                database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
+                print ("deleted")
+                continue
+
+            elif i in self.closestDateInfo:
                 self.closestDateInfo.remove(i)
                 newDate = i[1].replace(year = i[1].year + 1)
                 if i[3] != None:
@@ -65,14 +70,13 @@ class Bday():
     async def bdayTimer(self): 
         if self.closestDate != None:
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
-            toDelete = []
-            for i in self.closestDateInfo:
+            for i in self.closestDateInfo[:]:
                 try:
                     print(i)
                     
                     if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
                         database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
-                        toDelete.append(i)
+                        self.closestDateInfo.remove(i)
                         print ("deleted")
                         continue
                     
@@ -82,8 +86,6 @@ class Bday():
                         await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
                 except Exception as e:
                     print(e)
-            for i in toDelete:
-                self.closestDateInfo.remove(i)
             database.connection.commit()
             self.__init__(self.closestDateInfo) 
             await self.check()
