@@ -20,7 +20,8 @@ class Bday():
         self.currentDate = datetime.now(pytz.utc)
         self.closestDate = None
         self.task = asyncio.ensure_future(self.bdayTimer())
-
+    def refreshDate(self):
+        self.currentDate = datetime.now(pytz.utc)
     async def check(self):
         self.task.cancel()
         database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
@@ -120,12 +121,12 @@ class Bday():
             self.closestDateInfo.remove(existing)
         except:
             pass
-
+        self.task.cancel()
         if len(self.closestDateInfo) == 0:
             self.__init__() 
             await self.check()
         else:     
-            self.task.cancel()
+            self.refreshDate()
             self.task = asyncio.ensure_future(self.bdayTimer())
 
 global birthday
@@ -217,9 +218,14 @@ async def on_message(message):
             database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
             birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
         database.connection.commit()
+        birthday.task.cancel()
         if len(birthday.closestDateInfo) ==0:
             birthday.__init__() 
             await birthday.check()
+        else:     
+            birthday.refreshDate()
+            birthday.task = asyncio.ensure_future(birthday.bdayTimer())
+            
         print("YEA")
         await message.channel.send("Cleared")
 
