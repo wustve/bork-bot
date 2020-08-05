@@ -73,10 +73,10 @@ class Bday():
                     database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                 else:
                     database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
-                utc = pytz.timezone("UTC")
-                utcTimestamp = utc.localize(i[1])
+                #utc = pytz.timezone("UTC")
+                #utcTimestamp = utc.localize(i[1])
                 tz = pytz.timezone(i[4])
-                localizedTimestamp = utcTimestamp.astimezone(tz)
+                localizedTimestamp = i[1].astimezone(tz)
                 try:
                     await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) +localizedTimestamp.tzname())
                 except AttributeError:
