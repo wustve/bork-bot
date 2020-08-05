@@ -5,12 +5,27 @@ import asyncio
 import os
 from db import Db
 
-#from  dotenv import load_dotenv
-#load_dotenv()
+
+import logging
+logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+
+from  dotenv import load_dotenv
+load_dotenv()
+'''
+utcTimestamp = datetime.strptime('09/02', "%m/%d")
+tz = pytz.timezone("UTC")
+utcTimestamp = tz.localize(utcTimestamp)  
+tz = pytz.timezone("EST")
+localizedTimestamp = utcTimestamp.astimezone(tz)
+
+print(localizedTimestamp.tzname())
+print(localizedTimestamp)
+'''
 
 
 database = Db()
-#database.request (("ALTER TABLE birthdays ALTER COLUMN date TYPE TIMESTAMP with time zone;"), 'change')
+#database.request("DELETE FROM birthdays", 'change')
+#database.request (("ALTER TABLE birthdays ADD timezone TEXT;"), 'change')
 #database.connection.commit()
 
 client = discord.Client()
@@ -20,24 +35,21 @@ class Bday():
         self.currentDate = datetime.now(pytz.utc)
         self.closestDate = None
         self.task = asyncio.ensure_future(self.bdayTimer())
-    def refreshDate(self):
-        self.currentDate = datetime.now(pytz.utc)
+    async def refreshTimer(self):
+        self.task.cancel()
+        if len(self.closestDateInfo) == 0:
+            self.__init__() 
+            await self.check()
+        else:     
+            self.currentDate = datetime.now(pytz.utc)
+            self.task = asyncio.ensure_future(self.bdayTimer())
     async def check(self):
         self.task.cancel()
-        database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
-        database.connection.commit()
-        self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
-
+        self.checkGuild()
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
-        removedChannels = []
+        self.removedChannels = []
         for i in allBdays:
-            if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
-                database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
-                continue
-            elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
-                database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
-                self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
-                removedChannels.append(i[2])
+            if self.checkUserChannel(i):
                 continue
 
             elif i in self.closestDateInfo:
@@ -61,11 +73,17 @@ class Bday():
                     database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                 else:
                     database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
-                    
+                utc = pytz.timezone("UTC")
+                utcTimestamp = utc.localize(i[1])
+                tz = pytz.timezone(i[4])
+                localizedTimestamp = utcTimestamp.astimezone(tz)
                 try:
-                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
+                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) +localizedTimestamp.tzname())
                 except AttributeError:
-                    await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(i[1].date()) )
+                    try:
+                        await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + localizedTimestamp.tzname())
+                    except AttributeError:
+                        self.deleteUser(i[0])
                 allBdays.append((i[0],newDate,i[2],i[3]))
 
             elif i[1] < self.closestDate:
@@ -77,36 +95,48 @@ class Bday():
 
         database.connection.commit()
         self.task = asyncio.ensure_future(self.bdayTimer())
-
+    def checkGuild(self):
+        database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
+        database.connection.commit()
+        self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
+    def checkUserChannel(self, entry):
+        if entry[3] != None and client.get_guild(entry[3]).get_member(entry[0]) == None:
+            database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (entry[3],entry[0])), "change")
+            try:
+                self.closestDateInfo.remove(entry)
+            except ValueError:
+                pass
+            return True
+        elif entry[3] != None and client.get_channel(entry[2]) == None and entry[2] not in self.removedChannels:
+            database.request(("DELETE FROM birthdays WHERE channel = %s", (entry[2],)), "change")
+            self.closestDateInfo = [j for j in self.closestDateInfo if j[2] != entry[2]]
+            self.removedChannels.append(entry[2])
+            return True
+        else:
+            return False
+    def deleteUser(self, user):
+        database.request(("DELETE FROM birthdays WHERE userId = %s", (user,)), "change")
+        self.closestDateInfo = [j for j in self.closestDateInfo if j[0] != user]
     async def bdayTimer(self): 
         if self.closestDate != None:
-            print("HEY")
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
-            removedChannels = []
-            database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
-            database.connection.commit()
-            self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
+            self.checkGuild()
+            self.removedChannels = []
             for i in self.closestDateInfo[:]:
-                
-                if i[3] != None and client.get_guild(i[3]).get_member(i[0]) == None:
-                    database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (i[3],i[0])), "change")
-                    self.closestDateInfo.remove(i)
+                if self.checkUserChannel(i):
                     continue
-                elif i[3] != None and client.get_channel(i[2]) == None and i[2] not in removedChannels:
-                    database.request(("DELETE FROM birthdays WHERE channel = %s", (i[2],)), "change")
-                    self.closestDateInfo = [j for j in self.closestDateInfo if j != i[2]]
-
-                    removedChannels.append(i[2])
-                    continue
-                
                 try:
                     await client.get_channel(i[2]).send("It's " +client.get_user(i[0]).mention + "'s Bday!" )
                 except AttributeError:
-                    await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
+                    try:
+                        await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
+                    except AttributeError:
+                        self.deleteUser(i[0])
 
             database.connection.commit()
             self.__init__(self.closestDateInfo) 
             await self.check()
+
     async def update(self,new, existing):
         if self.closestDate == None: 
             self.closestDate = new[1]
@@ -121,13 +151,8 @@ class Bday():
             self.closestDateInfo.remove(existing)
         except:
             pass
-        self.task.cancel()
-        if len(self.closestDateInfo) == 0:
-            self.__init__() 
-            await self.check()
-        else:     
-            self.refreshDate()
-            self.task = asyncio.ensure_future(self.bdayTimer())
+        await self.refreshTimer()
+
 
 global birthday
 async def createBday(): #Can't call async functions from constructor, so I have to do this
@@ -218,14 +243,7 @@ async def on_message(message):
             database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
             birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
         database.connection.commit()
-        birthday.task.cancel()
-        if len(birthday.closestDateInfo) ==0:
-            birthday.__init__() 
-            await birthday.check()
-        else:     
-            birthday.refreshDate()
-            birthday.task = asyncio.ensure_future(birthday.bdayTimer())
-            
+        await birthday.refreshTimer()            
         print("YEA")
         await message.channel.send("Cleared")
 
@@ -234,7 +252,8 @@ async def on_message(message):
             try:
                 date = datetime.strptime(message.content.split(" ")[1].strip(), "%m/%d")
                 date = date.replace(year=datetime.now(pytz.utc).year)
-                tz = pytz.timezone(message.content.split(" ")[2].strip())
+                tzString = message.content.split(" ")[2].strip()
+                tz = pytz.timezone(tzString)
                 date = tz.localize(date)
                 if date < datetime.now(tz):
                     date = date.replace(year=datetime.now(tz).year + 1)
@@ -248,21 +267,21 @@ async def on_message(message):
                 existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
             if existing == None:
                 try:
-                    new = (message.author.id, date, message.channel.id, message.guild.id)
-                    database.request(('INSERT INTO birthdays (userId,date,channel,guild) VALUES (%s, %s, %s, %s)', new),"change")
+                    new = (message.author.id, date, message.channel.id, message.guild.id, tzString)
+                    database.request(('INSERT INTO birthdays (userId,date,channel,guild, timezone) VALUES (%s, %s, %s, %s, %s)', new),"change")
                 except AttributeError:
-                    new = (message.author.id, date, message.channel.id, None)
-                    database.request(('INSERT INTO birthdays (userId,date,channel, guild) VALUES (%s, %s, %s,%s)', new),"change")
+                    new = (message.author.id, date, message.channel.id, None, tzString)
+                    database.request(('INSERT INTO birthdays (userId,date,channel, guild, timezone) VALUES (%s, %s, %s,%s, %s)', new),"change")
             elif existing[1] == date and existing [2] == message.channel.id:
                 await message.channel.send("This is matches your existing record")
                 return
             else:
                 try:
-                    new = (message.author.id, date, message.channel.id, message.guild.id)
-                    database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, message.author.id, message.guild.id)), "change")
+                    new = (message.author.id, date, message.channel.id, message.guild.id, tzString)
+                    database.request(("UPDATE birthdays SET date = %s, channel = %s, timezone = %s WHERE userId =%s AND guild = %s", (date, message.channel.id, tzString, message.author.id, message.guild.id)), "change")
                 except AttributeError:
-                    new = (message.author.id, date, message.channel.id, None)
-                    database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (date, message.author.id, message.channel.id)), "change")
+                    new = (message.author.id, date, message.channel.id, None, tzString)
+                    database.request(("UPDATE birthdays SET date = %s, timezone = %s WHERE userId =%s AND channel = %s", (date,tzString, message.author.id, message.channel.id)), "change")
             database.connection.commit()
             #global birthday
             await birthday.update(new, existing)
