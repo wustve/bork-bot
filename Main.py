@@ -6,11 +6,11 @@ import os
 from db import Db
 
 
-import logging
-logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
+#import logging
+#logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 
-from  dotenv import load_dotenv
-load_dotenv()
+#from  dotenv import load_dotenv
+#load_dotenv()
 '''
 utcTimestamp = datetime.strptime('09/02', "%m/%d")
 tz = pytz.timezone("UTC")
