@@ -17,9 +17,9 @@ tz = pytz.timezone("UTC")
 utcTimestamp = tz.localize(utcTimestamp)  
 tz = pytz.timezone("EST")
 localizedTimestamp = utcTimestamp.astimezone(tz)
-
-print(localizedTimestamp.tzname())
 print(localizedTimestamp)
+print(localizedTimestamp.tzname())
+print(localizedTimestamp.date())
 '''
 
 
@@ -77,8 +77,11 @@ class Bday():
                 #utcTimestamp = utc.localize(i[1])
                 tz = pytz.timezone(i[4])
                 localizedTimestamp = i[1].astimezone(tz)
+                print(localizedTimestamp)
+                print(localizedTimestamp.tzname())
+                print(localizedTimestamp.date())
                 try:
-                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) +localizedTimestamp.tzname())
+                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + localizedTimestamp.tzname())
                 except AttributeError:
                     try:
                         await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + localizedTimestamp.tzname())
