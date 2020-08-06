@@ -81,10 +81,10 @@ class Bday():
                 print(localizedTimestamp.tzname())
                 print(localizedTimestamp.date())
                 try:
-                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + localizedTimestamp.tzname())
+                    await client.get_channel(i[2]).send("While I was offline, we missed " + client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + ' ' + i[4].upper())
                 except AttributeError:
                     try:
-                        await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + localizedTimestamp.tzname())
+                        await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + ' ' + i[4].upper())
                     except AttributeError:
                         self.deleteUser(i[0])
                 allBdays.append((i[0],newDate,i[2],i[3]))
@@ -239,16 +239,23 @@ async def on_message(message):
         await message.channel.send(toSend)
     
     elif message.content.lower().startswith("$clearbday"):
-        try:
-            database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (message.guild.id, message.author.id)), "change")
-            birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[3] != message.guild.id or i[0] != message.author.id]
+        try: 
+            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
         except AttributeError:
-            database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
-            birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
-        database.connection.commit()
-        await birthday.refreshTimer()            
-        print("YEA")
-        await message.channel.send("Cleared")
+            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
+        if existing != None:
+            try:
+                database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (message.guild.id, message.author.id)), "change")
+                birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[3] != message.guild.id or i[0] != message.author.id]
+            except AttributeError:
+                database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
+                birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
+            database.connection.commit()
+            await birthday.refreshTimer()            
+            print("YEA")
+            await message.channel.send("Cleared")
+        else: 
+            await message.channel.send("No record on file")
 
     elif message.content.lower().startswith("$bday"):
         try:
