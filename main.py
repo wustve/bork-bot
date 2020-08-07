@@ -190,7 +190,7 @@ async def on_message(message):
         embed.add_field(name = "$clearbday", value = "Delete your birthday", inline = False)
         embed.add_field(name = "$luck", value = "Gives you luck", inline = False)
         embed.add_field(name = "$pet", value = "Pet bork bot", inline = False)
-        embed.add_field(name = "$poll", value = "Create a poll\n`$poll [name]{option 1, option 2,...}`", inline = False)
+        embed.add_field(name = "$poll", value = "Create a poll\n`$poll [title]{option 1, option 2,...}`", inline = False)
         embed.add_field(name = "$qp", value = "Create a quick poll which is a ✅ or ❌ to your message", inline = False)
         embed.add_field(name = "$uwu", value = "uwu", inline = False)
         await message.channel.send(embed = embed)
