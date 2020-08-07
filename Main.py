@@ -9,8 +9,8 @@ from db import Db
 #import logging
 #logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 
-#from  dotenv import load_dotenv
-#load_dotenv()
+from  dotenv import load_dotenv
+load_dotenv()
 '''
 utcTimestamp = datetime.strptime('09/02', "%m/%d")
 tz = pytz.timezone("UTC")
@@ -180,7 +180,21 @@ async def on_message(message):
         await message.channel.send("woof") #async stuff allows program to work on other stuff while some processes are waiting to finish i.e work on stuff while message is still sending?
     
     if message.content.lower().startswith("$help"):
-        await message.channel.send("Commands: \n>>> $pet \n$luck\n$poll\n$qp\n$uwu")
+        embed = discord.Embed(
+            #description = 'tests',
+            colour = discord.Color(0xFF57C4)
+        )
+        embed.set_author(name = 'Commands', icon_url = 'https://cdn.discordapp.com/avatars/725121351584710707/96d4dfce31014cbdea61c9fe2a433ece.png?')
+        embed.add_field(name = '$bday', value = 'Set your bday which will be announced in the channel you set it in\n `$bday mm/dd timezone`\n [List of timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)', inline = False)
+        embed.add_field(name = "$checkbday", value = "For a user's bday: `$checkbday @user`\n For your own: `$checkbday`", inline = False)
+        embed.add_field(name = "$clearbday", value = "Delete your birthday", inline = False)
+        embed.add_field(name = "$luck", value = "Gives you luck", inline = False)
+        embed.add_field(name = "$pet", value = "Pet bork bot", inline = False)
+        embed.add_field(name = "$poll", value = "Create a poll\n`$poll [name]{option 1, option 2,...}`", inline = False)
+        embed.add_field(name = "$qp", value = "Create a quick poll which is a ✅ or ❌ to your message", inline = False)
+        embed.add_field(name = "$uwu", value = "uwu", inline = False)
+        await message.channel.send(embed = embed)
+        #await message.channel.send("Commands: \n>>> $pet \n$luck\n$poll\n$qp\n$uwu")
     
     elif message.content.lower().startswith("$pet"):
         await message.channel.send(message.author.mention +" has pet me!")
