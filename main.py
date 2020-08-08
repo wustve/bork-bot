@@ -183,7 +183,7 @@ async def on_message(message):
         embed.add_field(name = "$pet", value = "Pet bork bot", inline = False)
         embed.add_field(name = "$poll", value = "Create a poll\n`$poll [title]{option 1, option 2,...}`", inline = False)
         embed.add_field(name = "$qp", value = "Create a quick poll which is a ✅ or ❌ to your message", inline = False)
-        embed.add_field(name = "$uwu", value = "uwu", inline = False)
+        embed.add_field(name = "$leet", value = "Sends a copy of your message in 1337 speak (some letters -> numbers)", inline = False)
         await message.channel.send(embed = embed)
         #await message.channel.send("Commands: \n>>> $pet \n$luck\n$poll\n$qp\n$uwu")
     
@@ -238,9 +238,9 @@ async def on_message(message):
         await message.add_reaction("✅")
         await message.add_reaction("❌")
 
-    elif message.content.lower().startswith("$uwu"):
-        toSend = message.content[4:]
-        toSend = toSend.replace("u","uwu").replace("U","UWU").replace("o","owo").replace("O","OWO").replace("l","w").replace("L","W").replace("r","w").replace("R","W")
+    elif message.content.lower().startswith("$leet"):
+        toSend = message.content[5:]
+        toSend = toSend.replace("a","4").replace("A","4").replace("o","0").replace("O","0").replace("l","1").replace("L","1").replace("t","7").replace("T","7").replace("e","3").replace("E","3").replace("s","5").replace("S","5")
         await message.channel.send(toSend)
     
     elif message.content.lower().startswith("$clearbday"):
