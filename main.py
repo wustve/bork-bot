@@ -179,11 +179,11 @@ async def on_message(message):
         embed.add_field(name = '$bday', value = 'Set your bday which will be announced in the channel you set it in\n `$bday mm/dd timezone`\n [List of timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)', inline = False)
         embed.add_field(name = "$checkbday", value = "For a user's bday: `$checkbday @user`\nFor your own: `$checkbday`", inline = False)
         embed.add_field(name = "$clearbday", value = "Delete your birthday", inline = False)
+        embed.add_field(name = "$leet", value = "Sends a copy of your message in 1337 speak (some letters -> numbers)", inline = False)
         embed.add_field(name = "$luck", value = "Gives you luck", inline = False)
         embed.add_field(name = "$pet", value = "Pet bork bot", inline = False)
         embed.add_field(name = "$poll", value = "Create a poll\n`$poll [title]{option 1, option 2,...}`", inline = False)
         embed.add_field(name = "$qp", value = "Create a quick poll which is a ✅ or ❌ to your message", inline = False)
-        embed.add_field(name = "$leet", value = "Sends a copy of your message in 1337 speak (some letters -> numbers)", inline = False)
         await message.channel.send(embed = embed)
         #await message.channel.send("Commands: \n>>> $pet \n$luck\n$poll\n$qp\n$uwu")
     
