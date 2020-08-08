@@ -100,7 +100,7 @@ class Bday():
             except ValueError:
                 pass
             return True
-        elif entry[3] != None and client.get_channel(entry[2]) == None and entry[2] not in self.removedChannels:
+        elif entry[3] != None and (client.get_channel(entry[2]) == None or not client.get_channel(entry[2]).permissions_for(client.get_channel(entry[2]).guild.me).send_messages) and entry[2] not in self.removedChannels:
             database.request(("DELETE FROM birthdays WHERE channel = %s", (entry[2],)), "change")
             self.closestDateInfo = [j for j in self.closestDateInfo if j[2] != entry[2]]
             self.removedChannels.append(entry[2])
@@ -261,6 +261,8 @@ async def on_message(message):
             await message.channel.send("Cleared")
         else: 
             await message.channel.send("No record on file")
+
+            
     elif message.content.lower().startswith('$checkbday'):
         try:
             user = message.mentions[0]
