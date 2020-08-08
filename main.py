@@ -9,8 +9,8 @@ from db import Db
 #import logging
 #logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 
-from  dotenv import load_dotenv
-load_dotenv()
+#from  dotenv import load_dotenv
+#load_dotenv()
 
 
 database = Db()
@@ -265,7 +265,6 @@ async def on_message(message):
         try:
             user = message.mentions[0]
         except IndexError as e:
-            print (e)
             user = message.author
         try: 
             info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
