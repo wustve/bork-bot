@@ -9,18 +9,8 @@ from db import Db
 #import logging
 #logging.basicConfig(filename='log.txt', level=logging.DEBUG, format=' %(asctime)s - %(levelname)s - %(message)s')
 
-#from  dotenv import load_dotenv
-#load_dotenv()
-'''
-utcTimestamp = datetime.strptime('09/02', "%m/%d")
-tz = pytz.timezone("UTC")
-utcTimestamp = tz.localize(utcTimestamp)  
-tz = pytz.timezone("EST")
-localizedTimestamp = utcTimestamp.astimezone(tz)
-print(localizedTimestamp)
-print(localizedTimestamp.tzname())
-print(localizedTimestamp.date())
-'''
+from  dotenv import load_dotenv
+load_dotenv()
 
 
 database = Db()
@@ -122,6 +112,7 @@ class Bday():
         self.closestDateInfo = [j for j in self.closestDateInfo if j[0] != user]
     async def bdayTimer(self): 
         if self.closestDate != None:
+            print(self.closestDateInfo)
             await asyncio.sleep((self.closestDate - self.currentDate).total_seconds())
             self.checkGuild()
             self.removedChannels = []
@@ -280,13 +271,14 @@ async def on_message(message):
             info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
         except AttributeError:
             info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (user.id, message.channel.id)),"fetchone")
-        if info == None:
+
+        if info == None or birthday.checkUserChannel(info):
             await message.channel.send(user.mention + " has no bday on record")
             return
         tz = pytz.timezone(info[4])
         localizedTimestamp = info[1].astimezone(tz)
         try:
-            await message.channel.send(user.mention + "'s Bday is on " + str(localizedTimestamp.date()) + ' ' + info[4].upper())
+            await message.channel.send(user.mention + "'s Bday is on " + str(localizedTimestamp.date()) + ' ' + info[4].upper() + ' in ' + client.get_channel(info[2]).mention)
         except AttributeError:
             await message.channel.send(user.mention + "'s Bday is on " + str(localizedTimestamp.date()) + ' ' + info[4].upper())
 
