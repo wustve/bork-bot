@@ -244,23 +244,25 @@ async def on_message(message):
         await message.channel.send(toSend)
     
     elif message.content.lower().startswith("$clearbday"):
-        try: 
-            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
-        except AttributeError:
-            existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
-        if existing != None:
-            try:
-                database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (message.guild.id, message.author.id)), "change")
-                birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[3] != message.guild.id or i[0] != message.author.id]
+        try:
+            try: 
+                existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
             except AttributeError:
-                database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
-                birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
-            database.connection.commit()
-            await birthday.refreshTimer()            
-            print("YEA")
-            await message.channel.send("Cleared")
-        else: 
-            await message.channel.send("No record on file")
+                existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (message.author.id, message.channel.id)),"fetchone")
+            if existing != None:
+                try:
+                    database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (message.guild.id, message.author.id)), "change")
+                    birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[3] != message.guild.id or i[0] != message.author.id]
+                except AttributeError:
+                    database.request(("DELETE FROM birthdays WHERE channel = %s AND userId = %s", (message.channel.id, message.author.id)), "change")
+                    birthday.closestDateInfo = [i for i in birthday.closestDateInfo if i[2] != message.channel.id or i[0] != message.author.id]
+                database.connection.commit()
+                await birthday.refreshTimer()            
+                await message.channel.send("Cleared")
+            else: 
+                await message.channel.send("No record on file")
+        except ConnectionError:
+            await message.channel.send("Could not connect to database D:")
 
             
     elif message.content.lower().startswith('$checkbday'):
@@ -268,14 +270,16 @@ async def on_message(message):
             user = message.mentions[0]
         except IndexError as e:
             user = message.author
-        try: 
-            info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
-        except AttributeError:
-            info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (user.id, message.channel.id)),"fetchone")
-
-        if info == None or birthday.checkUserChannel(info):
-            await message.channel.send(user.mention + " has no bday on record")
-            return
+        try:
+            try: 
+                info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
+            except AttributeError:
+                info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND channel = %s LIMIT 1 ;", (user.id, message.channel.id)),"fetchone")
+            if info == None or birthday.checkUserChannel(info):
+                await message.channel.send(user.mention + " has no bday on record")
+                return
+        except ConnectionError:
+            await message.channel.send("Could not connect to database D:")
         tz = pytz.timezone(info[4])
         localizedTimestamp = info[1].astimezone(tz)
         try:
@@ -287,28 +291,28 @@ async def on_message(message):
 
     elif message.content.lower().startswith("$bday"):
         try:
-            try:
-                date = datetime.strptime(message.content.split(" ")[1].strip(), "%m/%d")
-                date = date.replace(year=datetime.now(pytz.utc).year)
-                tzString = message.content.split(" ")[2].strip()
-                tz = pytz.timezone(tzString)
-                date = tz.localize(date)
-                if date < datetime.now(tz):
-                    date = date.replace(year=datetime.now(tz).year + 1)
-                
-            except IndexError as e:
-                print(e)
-                await message.channel.send("Format should be: $bday mm/dd timezone \nYou are missing some fields")
-                return
-            except ValueError as e:
-                print(e)
-                await message.channel.send("Format should be: $bday mm/dd timezone \nYour date is invalid")
-                return
-            except pytz.exceptions.UnknownTimeZoneError as e:
-                print(e)
-                await message.channel.send("Your timezone is invalid")
-                return
-                
+            date = datetime.strptime(message.content.split(" ")[1].strip(), "%m/%d")
+            date = date.replace(year=datetime.now(pytz.utc).year)
+            tzString = message.content.split(" ")[2].strip()
+            tz = pytz.timezone(tzString)
+            date = tz.localize(date)
+            if date < datetime.now(tz):
+                date = date.replace(year=datetime.now(tz).year + 1)
+            
+        except IndexError as e:
+            print(e)
+            await message.channel.send("Format should be: $bday mm/dd timezone \nYou are missing some fields")
+            return
+        except ValueError as e:
+            print(e)
+            await message.channel.send("Format should be: $bday mm/dd timezone \nYour date is invalid")
+            return
+        except pytz.exceptions.UnknownTimeZoneError as e:
+            print(e)
+            await message.channel.send("Your timezone is invalid")
+            return
+        try:
+        
             try: 
                 existing = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(message.author.id, message.guild.id)),"fetchone")
             except AttributeError:
