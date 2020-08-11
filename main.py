@@ -11,7 +11,7 @@ from db import Db
 database = Db()
 client = discord.Client()
 
-class Bday():
+class Bday(): #Handles the bday feature
 
     def __init__(self, closestDateInfo = []):
         self.closestDateInfo = closestDateInfo
@@ -19,7 +19,7 @@ class Bday():
         self.closestDate = None
         self.task = asyncio.ensure_future(self.bdayTimer())
 
-    async def refreshTimer(self):
+    async def refreshTimer(self): #Refreshes the timer when the soonest birthdays to occur change
         self.task.cancel()
         if len(self.closestDateInfo) == 0:
             self.__init__() 
@@ -28,7 +28,7 @@ class Bday():
             self.currentDate = datetime.now(pytz.utc)
             self.task = asyncio.ensure_future(self.bdayTimer())
 
-    async def check(self):
+    async def check(self): #checks for the soonest birthdays
         self.task.cancel()
         self.checkGuild()
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
@@ -83,13 +83,13 @@ class Bday():
         database.connection.commit()
         self.task = asyncio.ensure_future(self.bdayTimer())
 
-    def checkGuild(self):
+    def checkGuild(self): #check if the bot is still in the guild
 
         database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
         database.connection.commit()
         self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
 
-    def checkUserChannel(self, entry):
+    def checkUserChannel(self, entry): #check if user is still in guild and if bot has access to the channel the bday is set in
 
         if entry[3] != None and client.get_guild(entry[3]).get_member(entry[0]) == None:
             database.request(("DELETE FROM birthdays WHERE guild = %s AND userId = %s", (entry[3],entry[0])), "change")
@@ -106,12 +106,12 @@ class Bday():
         else:
             return False
 
-    def deleteUser(self, user):
+    def deleteUser(self, user): #deletes user bdays (for when user's discord account is deleted)
 
         database.request(("DELETE FROM birthdays WHERE userId = %s", (user,)), "change")
         self.closestDateInfo = [j for j in self.closestDateInfo if j[0] != user]
 
-    async def bdayTimer(self): 
+    async def bdayTimer(self): #timer that announces bdays
 
         if self.closestDate != None:
             print(self.closestDateInfo)
@@ -133,7 +133,7 @@ class Bday():
             self.__init__(self.closestDateInfo) 
             await self.check()
 
-    async def update(self,new, existing):
+    async def update(self,new, existing): #updates the timer as necessary when a bday is added/updated
 
         if self.closestDate == None: 
             self.closestDate = new[1]
