@@ -11,6 +11,9 @@ from db import Db
 database = Db()
 client = discord.Client()
 
+#database.request(('Create Table birthdays ( userId bigint, date timestamp with time zone, channel bigint, guild bigint, timezone text)' ), "change ")
+#database.connection.commit()
+
 class Bday(): #Handles the bday feature
 
     def __init__(self, closestDateInfo = []):
@@ -38,15 +41,20 @@ class Bday(): #Handles the bday feature
 
             if self.checkUserChannel(i):
                 continue
-
-            elif i in self.closestDateInfo:
-                self.closestDateInfo.remove(i)
-                newDate = i[1].replace(year = i[1].year + 1)
-                if i[3] != None:
-                    database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
-                else:
-                    database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
-                allBdays.append((i[0],newDate,i[2],i[3]))
+            inclosestDateInfo = False
+            for j in self.closestDateInfo:
+                if j[0] == i[0] and j[2] == i[2] and j[3] == i[3]:
+                    self.closestDateInfo.remove(i)
+                    newDate = i[1].replace(year = i[1].year + 1)
+                    if i[3] != None:
+                        database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
+                    else:
+                        database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
+                    allBdays.append((i[0],newDate,i[2],i[3]))
+                    inclosestDateInfo = True
+                    break
+            if inclosestDateInfo:
+                continue
             
             elif self.closestDate == None and i[1] > self.currentDate:
                 self.closestDate = i[1]
