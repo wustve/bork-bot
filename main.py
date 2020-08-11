@@ -204,7 +204,7 @@ async def on_message(message):
             return user == message.author and str(reaction.emoji) == "👍" and sent.id == reaction.message.id #bool
         try:
             reaction, user = await client.wait_for("reaction_add", timeout = 10, check = check)
-        except asyncio.exceptions.TimeoutError:
+        except asyncio.TimeoutError:
             await message.channel.send("No luck for {.author.name}".format(message))
             await sent.remove_reaction('👍', client.user)       
         else:
