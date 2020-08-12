@@ -80,6 +80,11 @@ class Bday(): #Handles the bday feature
                         await client.get_user(i[0]).send("While I was offline, we missed " +client.get_user(i[0]).mention + "'s Bday on " + str(localizedTimestamp.date()) + ' ' + i[4].upper())
                     except AttributeError:
                         self.deleteUser(i[0])
+                    except discord.errors.Forbidden:
+                        pass
+                except discord.errors.Forbidden:
+                    pass
+                
                 allBdays.append((i[0],newDate,i[2],i[3]))
 
             elif i[1] < self.closestDate:
@@ -137,6 +142,11 @@ class Bday(): #Handles the bday feature
                         await client.get_user(i[0]).send("It's " +client.get_user(i[0]).mention + "'s Bday!")
                     except AttributeError:
                         self.deleteUser(i[0])
+                    except discord.errors.Forbidden:
+                        pass
+                except discord.errors.Forbidden:
+                    print('ok')
+                    pass
 
             database.connection.commit()
             self.__init__(self.closestDateInfo) 
