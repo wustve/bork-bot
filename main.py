@@ -237,7 +237,7 @@ async def on_message(message):
         optionEnd = message.content.find('}')
 
         if -1 in {titleStart ,titleEnd ,optionStart, optionEnd}  or ''in {message.content[titleStart +1:titleEnd].strip(), message.content[optionStart +1:optionEnd].strip()}:
-            await message.channel.send("Format should be: $poll [title] {options 1, option 2...}")
+            await message.channel.send("Format should be: $poll [title] {option 1, option 2...}")
         else:
             options = message.content[optionStart + 1 : optionEnd]
             options = options.split(",")
