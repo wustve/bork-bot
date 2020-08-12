@@ -36,13 +36,14 @@ class Bday(): #Handles the bday feature
         self.checkGuild()
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
         self.removedChannels = []
-
         for i in allBdays:
-
+            
             if self.checkUserChannel(i):
                 continue
             inclosestDateInfo = False
             for j in self.closestDateInfo:
+                print(i)
+                print(j)
                 if j[0] == i[0] and j[2] == i[2] and j[3] == i[3]:
                     self.closestDateInfo.remove(i)
                     newDate = i[1].replace(year = i[1].year + 1)
