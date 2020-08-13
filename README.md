@@ -1,4 +1,5 @@
-# bork-bot
+# Bork bot
+[Add Bork bot to your server](https://discord.com/oauth2/authorize?client_id=725121351584710707&permissions=256064&scope=bot)
 ## $bday
 Set your bday which will be announced in the channel you set it in  
 `$bday mm/dd timezone`  
