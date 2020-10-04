@@ -22,4 +22,4 @@ Pet bork bot
 Create a poll  
 `$poll [title]{option 1, option 2,...}`
 ## $qp
-Create a quick poll which is a ✅ or ❌ to your messag
+Create a quick poll which is a ✅ or ❌ to your message
