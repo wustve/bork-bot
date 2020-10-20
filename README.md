@@ -15,7 +15,7 @@ Delete your birthday
 ## $leet
 Sends a copy of your message in 1337 speak (some letters -> numbers)
 ## $luck
-Gives you luck
+Gives you luck [(Image Source)](https://imgur.com/ZSoq2wT)
 ## $pet
 Pet bork bot
 ## $poll
