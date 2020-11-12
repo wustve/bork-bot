@@ -1,4 +1,4 @@
-discord
+discord==1.5.1
 datetime
 asyncio
 psycopg2
