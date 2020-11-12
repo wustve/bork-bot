@@ -1,15 +1,19 @@
-import discord
 from datetime import datetime
 import pytz
 import asyncio
 import os
 from db import Db
 
+import discord
+intents = discord.Intents.default()
+intents.members = True
+
 #from  dotenv import load_dotenv
 #load_dotenv()
 
 database = Db()
-client = discord.Client()
+client = discord.Client(intents=intents)
+
 
 #database.request(('Create Table birthdays ( userId bigint, date timestamp with time zone, channel bigint, guild bigint, timezone text)' ), "change ")
 #database.connection.commit()
@@ -98,7 +102,7 @@ class Bday(): #Handles the bday feature
         self.task = asyncio.ensure_future(self.bdayTimer())
 
     def checkGuild(self): #check if the bot is still in the guild
-
+        print((tuple(i.id for i in client.guilds),))
         database.request(("DELETE FROM birthdays WHERE guild NOT IN %s AND guild IS NOT NULL ",(tuple(i.id for i in client.guilds),)), "change")
         database.connection.commit()
         self.closestDateInfo = [j for j in self.closestDateInfo if j[3] in [i.id for i in client.guilds] or j[3] == None]
@@ -184,6 +188,8 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
+    print(client.get_guild(630912200491532288))
+    print(client.get_guild(630912200491532288).get_member_named("K9_delta#1579"))
     print("ready")
 
 @client.event # essentially:  on_message = client.event(on_message), takes the function as its parameter and creates a new method on the client itself = func
@@ -296,6 +302,7 @@ async def on_message(message):
             user = message.mentions[0]
         except IndexError as e:
             user = message.author
+            print(user)
         try:
             try: 
                 info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
@@ -308,6 +315,7 @@ async def on_message(message):
             await message.channel.send("Could not connect to database D:")
         tz = pytz.timezone(info[4])
         localizedTimestamp = info[1].astimezone(tz)
+        print(info)
         try:
             await message.channel.send(user.mention + "'s Bday is on " + str(localizedTimestamp.date()) + ' ' + info[4].upper() + ' in ' + client.get_channel(info[2]).mention)
         except AttributeError:
