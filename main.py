@@ -46,7 +46,9 @@ class Bday(): #Handles the bday feature
                 continue
             inclosestDateInfo = False
             for j in self.closestDateInfo:
+                print("from db")
                 print(i)
+                print("from closest date")
                 print(j)
                 if j[0] == i[0] and j[2] == i[2] and j[3] == i[3]:
                     self.closestDateInfo.remove(i)
@@ -149,7 +151,7 @@ class Bday(): #Handles the bday feature
                     except discord.errors.Forbidden:
                         pass
                 except discord.errors.Forbidden:
-                    print('ok')
+                    print('Forbidden')
                     pass
 
             database.connection.commit()
@@ -188,8 +190,6 @@ async def createBday(): #Can't call async functions from constructor, so I have 
 async def on_ready():
     await client.change_presence(activity = discord.Game(name = "$help"))
     await createBday()
-    print(client.get_guild(630912200491532288))
-    print(client.get_guild(630912200491532288).get_member_named("K9_delta#1579"))
     print("ready")
 
 @client.event # essentially:  on_message = client.event(on_message), takes the function as its parameter and creates a new method on the client itself = func
@@ -302,7 +302,7 @@ async def on_message(message):
             user = message.mentions[0]
         except IndexError as e:
             user = message.author
-            print(user)
+            
         try:
             try: 
                 info = database.request(("SELECT * FROM birthdays WHERE userID = %s AND guild = %s LIMIT 1 ;",(user.id, message.guild.id)),"fetchone")
@@ -315,7 +315,7 @@ async def on_message(message):
             await message.channel.send("Could not connect to database D:")
         tz = pytz.timezone(info[4])
         localizedTimestamp = info[1].astimezone(tz)
-        print(info)
+        
         try:
             await message.channel.send(user.mention + "'s Bday is on " + str(localizedTimestamp.date()) + ' ' + info[4].upper() + ' in ' + client.get_channel(info[2]).mention)
         except AttributeError:
@@ -332,15 +332,15 @@ async def on_message(message):
                 date = date.replace(year=datetime.now(tz).year + 1)
             
         except IndexError as e:
-            print(e)
+            
             await message.channel.send("Format should be: $bday mm/dd timezone \nYou are missing some fields")
             return
         except ValueError as e:
-            print(e)
+            
             await message.channel.send("Format should be: $bday mm/dd timezone \nYour date is invalid")
             return
         except pytz.exceptions.UnknownTimeZoneError as e:
-            print(e)
+            
             await message.channel.send("Your timezone is invalid")
             return
         try:
