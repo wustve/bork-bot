@@ -39,28 +39,30 @@ class Bday(): #Handles the bday feature
         self.task.cancel()
         self.checkGuild()
         allBdays =  database.request("SELECT * FROM birthdays", "fetchall")
+        self.toRemove = self.closestDateInfo
+        self.closestDateInfo = []
         self.removedChannels = []
         for i in allBdays:
             
             if self.checkUserChannel(i):
                 continue
-            inclosestDateInfo = False
-            for j in self.closestDateInfo:
+            inToRemove = False
+            for j in self.toRemove:
                 print("from db")
                 print(i)
                 print("from closest date")
                 print(j)
                 if j[0] == i[0] and j[2] == i[2] and j[3] == i[3]:
-                    self.closestDateInfo.remove(i)
+                    self.toRemove.remove(i)
                     newDate = i[1].replace(year = i[1].year + 1)
                     if i[3] != None:
                         database.request(("UPDATE birthdays SET date = %s, channel = %s WHERE userId =%s AND guild = %s", (newDate, i[2], i[0], i[3])), "change")
                     else:
                         database.request(("UPDATE birthdays SET date = %s WHERE userId =%s AND channel = %s", (newDate, i[0], i[2])), "change")
                     allBdays.append((i[0],newDate,i[2],i[3]))
-                    inclosestDateInfo = True
+                    inToRemove = True
                     break
-            if inclosestDateInfo:
+            if inToRemove:
                 continue
             
             elif self.closestDate == None and i[1] > self.currentDate:
